@@ -46,7 +46,7 @@ Resources:
     Type: AWS::EC2::LaunchTemplate
     Properties:
       LaunchTemplateData:
-        ImageId: ami-0cff7528ff583bf9a
+        ImageId: ami-0b5eea76982371e91
         InstanceType: t2.micro
         KeyName: !Ref KeyName
         SecurityGroupIds:
@@ -66,7 +66,7 @@ Resources:
                 pip3 install flask
                 pip3 install flask_mysql
                 echo "${MyDBURI}" > /home/ec2-user/dbserver.endpoint
-                TOKEN="XXXXXXXXXXXXXXXXXX"
+                TOKEN="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"
                 FOLDER="https://$TOKEN@raw.githubusercontent.com/serdarcw/phonebook_app/master"
                 curl -s --create-dirs -o "/home/ec2-user/templates/index.html" -L "$FOLDER"/templates/index.html
                 curl -s --create-dirs -o "/home/ec2-user/templates/add-update.html" -L "$FOLDER"/templates/add-update.html
