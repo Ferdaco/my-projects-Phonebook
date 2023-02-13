@@ -6,7 +6,7 @@ from flaskext.mysql import MySQL
 app = Flask(__name__)
 
 # This "/home/ec2-user/dbserver.endpoint" file has to be created from cloudformation template and it has RDS endpoint
-db_endpoint = open("/home/ec2-user/dbserver.endpoint", 'r', encoding='UTF-8') # bu satırda dbserver.endpoint kısmı önemli, user data yaparken tekrar bakılacaktır.
+db_endpoint = open("/home/ec2-user/dbserver.endpoint", 'r', encoding='UTF-8') # bu satırda dbserver.endpoint kısmı önemli, user data yaparken tekrar bakılacaktır. # encoding='UTF-8' türkçe karakterleri oku demektir.
 
 # Configure mysql database
 

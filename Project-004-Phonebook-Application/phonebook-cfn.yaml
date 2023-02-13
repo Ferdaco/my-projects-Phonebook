@@ -1,15 +1,6 @@
-AWSTemplateFormatVersion: 2010-09-09
-
-Description: |
-  CloudFormation Template for Phonebook Application. This template creates Application Load Balancer 
-  with Auto Scaling Group of Amazon Linux 2 (ami-0aa7d40eeae50c9a9) EC2 Instances which host Python Flask Web Application. 
-  EC2 instances are placed within WebServerSecurityGroup which allows http (80) connections only from 
-  ALBSecurityGroup, and allows tcp(3306) connections only within itself. RDS DB instance is placed 
-  within WebServerSecurityGroup so that Database Server can communicate with Web Servers. 
-  Application Load Balancer is placed within ALBSecurityGroup which allows http (80) connections from anywhere. 
-  WebServerASG Auto Scaling Group is using the WebServerLT Launch Template in order to spin up instances needed. 
-  WebServerLT Launch Template is configured to prepare Python Flask environment on EC2, and to deploy 
-  Phonebook Application on Flask Server after downloading the app code from Github repository.
+AWSTemplateFormatVersion: 
+Description: 
+  CloudFormation Template for Phonebook Application. This template creates Application Load Balancer with Auto Scaling Group of Amazon Linux 2 (ami-0aa7d40eeae50c9a9) EC2 Instances which host Python Flask Web Application. EC2 instances are placed within WebServerSecurityGroup which allows http (80) connections only from ALBSecurityGroup, and allows tcp(3306) connections only within itself. RDS DB instance is placed within WebServerSecurityGroup so that Database Server can communicate with Web Servers. Application Load Balancer is placed within ALBSecurityGroup which allows http (80) connections from anywhere. WebServerASG Auto Scaling Group is using the WebServerLT Launch Template in order to spin up instances needed. WebServerLT Launch Template is configured to prepare Python Flask environment on EC2, and to deploy Phonebook Application on Flask Server after downloading the app code from Github repository.
 
 Parameters:
   MyVPC:
@@ -23,12 +14,12 @@ Parameters:
   Subnets:
     Description: Please select your subnets used by ALB
     Type: List<AWS::EC2::Subnet::Id>
-  
+
 Resources:
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Enable HTTP for Application Load Balancer
+      GroupDescription: Enable HTTP for Application Load Balancer # uygulamaların dış dünya ile ilk irtibat kurduğu yer Load Balancerdır.
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
@@ -42,13 +33,13 @@ Resources:
       GroupDescription: Enable HTTP for Flask Web Server and SSH for getting into EC2
       SecurityGroupIngress:
          - IpProtocol: tcp
-           FromPort: 22
+           FromPort: 22 # 22 portu heryerden gelen trafiğe izin verir.
            ToPort: 22
            CidrIp: 0.0.0.0/0
          - IpProtocol: tcp
-           FromPort: 80
+           FromPort: 80 # 80 portu sadece Load Balancer'den gelen trafic girebilir.
            ToPort: 80
-           SourceSecurityGroupId: !GetAtt ALBSecurityGroup.GroupId
+           SourceSecurityGroupId: !GetAtt ALBSecurityGroup.GroupId # Sadece Load Balancer'den gelen trafiği kontrol et demektir, GetAtt bir uygulamanın sadece alt özelliğini alır.
       VpcId: !Ref MyVPC
 
   WebServerLT:
@@ -76,21 +67,22 @@ Resources:
                 pip3 install flask_mysql
                 echo "${MyDBURI}" > /home/ec2-user/dbserver.endpoint
                 TOKEN="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"
-                FOLDER="https://$TOKEN@raw.githubusercontent.com/Ferdaco/my-projects/main/Project-004-Phonebook-Application"
+                FOLDER="https://$TOKEN@https://raw.githubusercontent.com/Ferdaco/my-projects/main/Project-004-Phonebook-Application"
                 curl -s --create-dirs -o "/home/ec2-user/templates/index.html" -L "$FOLDER"/templates/index.html
                 curl -s --create-dirs -o "/home/ec2-user/templates/add-update.html" -L "$FOLDER"/templates/add-update.html
                 curl -s --create-dirs -o "/home/ec2-user/templates/delete.html" -L "$FOLDER"/templates/delete.html
                 curl -s --create-dirs -o "/home/ec2-user/phonebook-app.py" -L "$FOLDER"/phonebook-app.py
                 python3 /home/ec2-user/phonebook-app.py
               - MyDBURI: !GetAtt MyDatabaseServer.Endpoint.Address
+
   WebServerTG:
     Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
     Properties:
       Port: 80
       Protocol: HTTP
       TargetType: instance
-      UnhealthyThresholdCount: 3
-      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3 # bir instance'den 3 kez unhealty sinyali alırsa o bağlantı unhealty'dir.
+      HealthyThresholdCount: 2 # bir instance'den 2 kez healty sinyali alırsa o bağlantı healty'dir.
       VpcId: !Ref MyVPC
 
   ApplicationLoadBalancer:
@@ -99,7 +91,7 @@ Resources:
       IpAddressType: ipv4
       Scheme: internet-facing
       SecurityGroups:
-        - !GetAtt ALBSecurityGroup.GroupId
+        - !GetAtt ALBSecurityGroup.GroupId # GetAtt yazdığın zaman, yazdığın uygulamanın alt özelliğini alırsın, yani noktadan sonraki kısım önemlidir, bu adresin altındaki özelliği al demektir.
       Subnets: !Ref Subnets
       Type: application
 
@@ -118,14 +110,14 @@ Resources:
     Properties:
       AvailabilityZones:
         !GetAZs ""
-      DesiredCapacity: 2
-      HealthCheckGracePeriod: 300
+      DesiredCapacity: 2 # genel olarak 2 instance kullanılsın demektir.
+      HealthCheckGracePeriod: 300 # Health Check bekleme süresidir, default seçtiğinde otomatik 300 saniye gelir.
       HealthCheckType: ELB
       LaunchTemplate:
         LaunchTemplateId: !Ref WebServerLT
         Version: !GetAtt WebServerLT.LatestVersionNumber
-      MaxSize: 3 #required
-      MinSize: 1 #required
+      MaxSize: 3 #required # Maximum 3 instance ayağa kaldır.
+      MinSize: 1 #required # Minimum 1 instance düşür, burada policy belirtisek ayağa kalkana kadar minimum altına düşme demektir.
       TargetGroupARNs:
         - !Ref WebServerTG
 
@@ -142,9 +134,9 @@ Resources:
       AllocatedStorage: 20
       AllowMajorVersionUpgrade: false
       AutoMinorVersionUpgrade: false
-      BackupRetentionPeriod: 0
+      BackupRetentionPeriod: 0 # SINAV SORUSU, Backup Retention Periodu sıfır girersen backup oluşturmaz.
       DBInstanceClass: db.t2.micro
-      DBInstanceIdentifier: ferdaco-db-1
+      DBInstanceIdentifier: ferdaco-db
       DBName: clarusway_phonebook
       DBSecurityGroups: 
         - !Ref MyDBSecurityGroup
@@ -156,8 +148,8 @@ Resources:
       PubliclyAccessible: true
 
 Outputs:
-  WebsiteURL:
+    WebsiteURL:
     Value: !Sub 
       - http://${ALBAddress}
       - ALBAddress: !GetAtt ApplicationLoadBalancer.DNSName
-    Description: Phonebook Application Load Balancer URL
+    Description: Phonebook Application Load Balancer URL # çoklu instancelara GUI'den ulaşamazsın, dış dünyaya açılan kapı Load Balancer üzerindendir. 
